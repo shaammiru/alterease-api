@@ -1,21 +1,18 @@
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
+import { Readable } from "stream";
 import sharp from "sharp";
-// import ffmpeg from "fluent-ffmpeg";
+import ffmpeg from "fluent-ffmpeg";
 
 const app = new Hono();
 
 app.use("/uploads/*", serveStatic({ root: "./" }));
 
-app.get("/", (c) => {
-  return c.text("Hello Hono!");
-});
-
 app.post("/image/upload", async (c) => {
   const body = await c.req.parseBody();
-  const file = body["image"] as Blob;
   const width = parseInt(body["width"] as string);
   const height = parseInt(body["height"] as string);
+  const file = body["image"] as Blob;
 
   if (file.type.split("/")[0] != "image") {
     return c.text("file must be an image");
@@ -28,34 +25,70 @@ app.post("/image/upload", async (c) => {
   try {
     const buffer = await file.arrayBuffer();
     const image = sharp(new Uint8Array(buffer));
-    const processedImage = await image
-      .resize(width, height)
-      .toFile(`uploads/image/${file.name}`);
+    await image.resize(width, height).toFile(`uploads/image/${file.name}`);
 
     return c.json({
-      message: "Image uploaded",
+      message: "image uploaded",
       image: {
         name: file.name,
         size: file.size,
+        url: `${process.env.HOST}/uploads/image/${file.name}`,
       },
     });
   } catch (error) {
-    return c.text("Error processing image");
+    return c.text("error processing image");
   }
 });
 
 app.post("/audio/upload", async (c) => {
   const body = await c.req.parseBody();
+  const level = body["level"] as string;
   const file = body["audio"] as Blob;
+  const fileType = file.type.split("/");
 
-  if (file.type.split("/")[0] != "audio") {
-    return c.text("File not allowed");
+  if (fileType[0] != "audio" || fileType[1] != "mpeg") {
+    return c.text("file must be an audio/mpeg");
   }
 
-  return c.json({
-    message: "Audio uploaded",
-    image: { name: file.name, size: file.size },
-  });
+  var bitrate = "96k";
+  switch (level) {
+    case "low":
+      bitrate = "96k";
+      break;
+    case "medium":
+      bitrate = "64k";
+      break;
+    case "high":
+      bitrate = "48k";
+      break;
+  }
+
+  try {
+    await Bun.write(`uploads/audio/${file.name}`, file);
+    await new Promise<void>((resolve, reject) => {
+      ffmpeg(`uploads/audio/${file.name}`)
+        .audioBitrate(bitrate)
+        .output(`uploads/audio/compressed-${file.name}`)
+        .on("end", () => {
+          resolve();
+        })
+        .on("error", (err) => {
+          reject(err);
+        })
+        .run();
+    });
+
+    return c.json({
+      message: "audio uploaded",
+      audio: {
+        name: file.name,
+        size: file.size,
+        url: `${process.env.HOST}/uploads/audio/compressed-${file.name}`,
+      },
+    });
+  } catch (error) {
+    return c.text("error processing audio");
+  }
 });
 
 export default app;
