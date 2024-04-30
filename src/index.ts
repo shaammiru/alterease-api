@@ -34,6 +34,14 @@ app.post("/image/resize", async (c) => {
     });
   }
 
+  if (height < 1 || width < 1) {
+    c.status(400);
+    return c.json({
+      message: "validation error",
+      error: "height or width must be greater than 0",
+    });
+  }
+
   try {
     const buffer = await file.arrayBuffer();
     const image = sharp(new Uint8Array(buffer));
