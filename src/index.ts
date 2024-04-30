@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
-import { Readable } from "stream";
+import { unlink } from "node:fs/promises";
 import sharp from "sharp";
 import ffmpeg from "fluent-ffmpeg";
 
@@ -8,46 +8,63 @@ const app = new Hono();
 
 app.use("/uploads/*", serveStatic({ root: "./" }));
 
-app.post("/image/upload", async (c) => {
+app.post("/image/resize", async (c) => {
   const body = await c.req.parseBody();
+  const file = body["image"] as Blob;
   const width = parseInt(body["width"] as string);
   const height = parseInt(body["height"] as string);
-  const file = body["image"] as Blob;
 
   if (file.type.split("/")[0] != "image") {
-    return c.text("file must be an image");
+    c.status(400);
+    return c.json({
+      message: "validation error",
+      error: "file must be an image",
+    });
   }
 
   if (isNaN(height) || isNaN(width)) {
-    return c.text("width or height must be a decimal number");
+    c.status(400);
+    return c.json({
+      message: "validation error",
+      error: "height or width must be a decimal number",
+    });
   }
 
   try {
     const buffer = await file.arrayBuffer();
     const image = sharp(new Uint8Array(buffer));
-    await image.resize(width, height).toFile(`uploads/image/${file.name}`);
+    await image
+      .resize(width, height)
+      .toFile(`uploads/image/resized-${file.name}`);
 
     return c.json({
-      message: "image uploaded",
+      message: "success",
       image: {
         name: file.name,
         size: file.size,
-        url: `${process.env.HOST}/uploads/image/${file.name}`,
+        url: `${process.env.HOST}/uploads/image/resized-${file.name}`,
       },
     });
   } catch (error) {
-    return c.text("error processing image");
+    c.status(500);
+    return c.json({
+      message: "internal server error",
+      error: error,
+    });
   }
 });
 
-app.post("/audio/upload", async (c) => {
+app.post("/audio/compress", async (c) => {
   const body = await c.req.parseBody();
-  const level = body["level"] as string;
   const file = body["audio"] as Blob;
-  const fileType = file.type.split("/");
+  const level = body["level"] as string;
 
-  if (fileType[0] != "audio" || fileType[1] != "mpeg") {
-    return c.text("file must be an audio/mpeg");
+  if (file.type != "audio/mpeg") {
+    c.status(400);
+    return c.json({
+      message: "validation error",
+      error: "file must be an audio/mpeg",
+    });
   }
 
   var bitrate = "96k";
@@ -78,8 +95,10 @@ app.post("/audio/upload", async (c) => {
         .run();
     });
 
+    await unlink(`uploads/audio/${file.name}`);
+
     return c.json({
-      message: "audio uploaded",
+      message: "success",
       audio: {
         name: file.name,
         size: file.size,
@@ -87,7 +106,12 @@ app.post("/audio/upload", async (c) => {
       },
     });
   } catch (error) {
-    return c.text("error processing audio");
+    console.error(error);
+    c.status(500);
+    return c.json({
+      message: "internal server error",
+      error: error,
+    });
   }
 });
 
