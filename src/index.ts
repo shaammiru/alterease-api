@@ -1,4 +1,6 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { logger } from "hono/logger";
 import { serveStatic } from "hono/bun";
 import { unlink } from "node:fs/promises";
 import sharp from "sharp";
@@ -6,6 +8,8 @@ import ffmpeg from "fluent-ffmpeg";
 
 const app = new Hono();
 
+app.use(cors());
+app.use(logger());
 app.use("/uploads/*", serveStatic({ root: "./" }));
 
 app.post("/image/resize", async (c) => {
@@ -49,7 +53,7 @@ app.post("/image/resize", async (c) => {
     c.status(500);
     return c.json({
       message: "internal server error",
-      error: error,
+      error: "error processing image",
     });
   }
 });
@@ -106,11 +110,10 @@ app.post("/audio/compress", async (c) => {
       },
     });
   } catch (error) {
-    console.error(error);
     c.status(500);
     return c.json({
       message: "internal server error",
-      error: error,
+      error: "error processing audio",
     });
   }
 });
