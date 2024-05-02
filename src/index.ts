@@ -11,6 +11,9 @@ app.use(cors());
 app.use(logger());
 app.use("/uploads/*", serveStatic({ root: "./" }));
 
+app.get("/", async (c) => {
+  c.text("Welcome to Hono!");
+});
 app.post("/image/resize", imageHandler.resize);
 app.post("/image/rotate", imageHandler.rotate);
 app.post("/image/flip", imageHandler.flip);
