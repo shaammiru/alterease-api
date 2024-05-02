@@ -7,6 +7,14 @@ const resize = async (c: Context) => {
   const width = parseInt(body["width"] as string);
   const height = parseInt(body["height"] as string);
 
+  if (!file) {
+    c.status(400);
+    return c.json({
+      message: "validation error",
+      error: "image field is required",
+    });
+  }
+
   if (file.type.split("/")[0] != "image") {
     c.status(400);
     return c.json({
@@ -60,6 +68,14 @@ const rotate = async (c: Context) => {
   const file = body["image"] as Blob;
   const rotateDegree = parseInt(body["rotateDegree"] as string);
 
+  if (!file) {
+    c.status(400);
+    return c.json({
+      message: "validation error",
+      error: "image field is required",
+    });
+  }
+
   if (isNaN(rotateDegree)) {
     c.status(400);
     return c.json({
@@ -97,6 +113,14 @@ const flip = async (c: Context) => {
   const body = await c.req.parseBody();
   const file = body["image"] as Blob;
   const flipDirection = body["flipDirection"] as string;
+
+  if (!file) {
+    c.status(400);
+    return c.json({
+      message: "validation error",
+      error: "image field is required",
+    });
+  }
 
   try {
     const buffer = await file.arrayBuffer();

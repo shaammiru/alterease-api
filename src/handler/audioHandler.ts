@@ -7,6 +7,14 @@ const compress = async (c: Context) => {
   const file = body["audio"] as Blob;
   const level = body["level"] as string;
 
+  if (!file) {
+    c.status(400);
+    return c.json({
+      message: "validation error",
+      error: "audio field is required",
+    });
+  }
+
   if (file.type != "audio/mpeg") {
     c.status(400);
     return c.json({
