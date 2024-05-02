@@ -37,11 +37,11 @@ const compress = async (c: Context) => {
   }
 
   try {
-    await Bun.write(`uploads/audio/${file.name}`, file);
+    await Bun.write(`api/audio/${file.name}`, file);
     await new Promise<void>((resolve, reject) => {
-      ffmpeg(`uploads/audio/${file.name}`)
+      ffmpeg(`api/audio/${file.name}`)
         .audioBitrate(bitrate)
-        .output(`uploads/audio/compressed-${file.name}`)
+        .output(`api/audio/compressed-${file.name}`)
         .on("end", () => {
           resolve();
         })
@@ -51,14 +51,14 @@ const compress = async (c: Context) => {
         .run();
     });
 
-    await unlink(`uploads/audio/${file.name}`);
+    await unlink(`api/audio/${file.name}`);
 
     return c.json({
       message: "success",
       audio: {
         name: file.name,
         size: file.size,
-        url: `${process.env.HOST}/uploads/audio/compressed-${file.name}`,
+        url: `${process.env.HOST}/api/audio/compressed-${file.name}`,
       },
     });
   } catch (error) {

@@ -42,16 +42,14 @@ const resize = async (c: Context) => {
   try {
     const buffer = await file.arrayBuffer();
     const image = sharp(new Uint8Array(buffer));
-    await image
-      .resize(width, height)
-      .toFile(`uploads/image/resized-${file.name}`);
+    await image.resize(width, height).toFile(`api/image/resized-${file.name}`);
 
     return c.json({
       message: "success",
       image: {
         name: file.name,
         size: file.size,
-        url: `${process.env.HOST}/uploads/image/resized-${file.name}`,
+        url: `${process.env.HOST}/api/image/resized-${file.name}`,
       },
     });
   } catch (error) {
@@ -88,16 +86,14 @@ const rotate = async (c: Context) => {
     const buffer = await file.arrayBuffer();
     const image = sharp(new Uint8Array(buffer));
 
-    await image
-      .rotate(rotateDegree)
-      .toFile(`uploads/image/rotated-${file.name}`);
+    await image.rotate(rotateDegree).toFile(`api/image/rotated-${file.name}`);
 
     return c.json({
       message: "success",
       image: {
         name: file.name,
         size: file.size,
-        url: `${process.env.HOST}/uploads/image/rotated-${file.name}`,
+        url: `${process.env.HOST}/api/image/rotated-${file.name}`,
       },
     });
   } catch (error) {
@@ -138,14 +134,14 @@ const flip = async (c: Context) => {
       });
     }
 
-    await image.toFile(`uploads/image/flipped-${file.name}`);
+    await image.toFile(`api/image/flipped-${file.name}`);
 
     return c.json({
       message: "success",
       image: {
         name: file.name,
         size: file.size,
-        url: `${process.env.HOST}/uploads/image/flipped-${file.name}`,
+        url: `${process.env.HOST}/api/image/flipped-${file.name}`,
       },
     });
   } catch (error) {

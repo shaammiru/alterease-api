@@ -9,7 +9,7 @@ const app = new Hono();
 
 app.use(cors());
 app.use(logger());
-app.use("/uploads/*", serveStatic({ root: "./" }));
+app.use("/api/*", serveStatic({ root: "./" }));
 
 app.post("/api/image/resize", imageHandler.resize);
 app.post("/api/image/rotate", imageHandler.rotate);
