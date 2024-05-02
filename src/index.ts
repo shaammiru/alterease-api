@@ -12,7 +12,8 @@ app.use(logger());
 app.use("/uploads/*", serveStatic({ root: "./" }));
 
 app.post("/image/resize", imageHandler.resize);
-app.post("/image/filter", imageHandler.rotateAndFlip);
+app.post("/image/rotate", imageHandler.rotate);
+app.post("/image/flip", imageHandler.flip);
 app.post("/audio/compress", audioHandler.compress);
 
 export default app;

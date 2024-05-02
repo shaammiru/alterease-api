@@ -55,11 +55,10 @@ const resize = async (c: Context) => {
   }
 };
 
-const rotateAndFlip = async (c: Context) => {
+const rotate = async (c: Context) => {
   const body = await c.req.parseBody();
   const file = body["image"] as Blob;
   const rotateDegree = parseInt(body["rotateDegree"] as string);
-  const flipDirection = body["flipDirection"] as string;
 
   if (isNaN(rotateDegree)) {
     c.status(400);
@@ -73,32 +72,16 @@ const rotateAndFlip = async (c: Context) => {
     const buffer = await file.arrayBuffer();
     const image = sharp(new Uint8Array(buffer));
 
-    if (flipDirection) {
-      if (flipDirection === "H") {
-        image.flop();
-      } else if (flipDirection === "V") {
-        image.flip();
-      } else {
-        c.status(400);
-        return c.json({
-          message: "validation error",
-          error: "flipDirection must be either H, V, or empty",
-        });
-      }
-    }
-
-    if (rotateDegree) {
-      image.rotate(90);
-    }
-
-    await image.toFile(`uploads/image/rotated-flipped-${file.name}`);
+    await image
+      .rotate(rotateDegree)
+      .toFile(`uploads/image/rotated-${file.name}`);
 
     return c.json({
       message: "success",
       image: {
         name: file.name,
         size: file.size,
-        url: `${process.env.HOST}/uploads/image/rotated-flipped-${file.name}`,
+        url: `${process.env.HOST}/uploads/image/rotated-${file.name}`,
       },
     });
   } catch (error) {
@@ -110,4 +93,44 @@ const rotateAndFlip = async (c: Context) => {
   }
 };
 
-export default { resize, rotateAndFlip };
+const flip = async (c: Context) => {
+  const body = await c.req.parseBody();
+  const file = body["image"] as Blob;
+  const flipDirection = body["flipDirection"] as string;
+
+  try {
+    const buffer = await file.arrayBuffer();
+    const image = sharp(new Uint8Array(buffer));
+
+    if (flipDirection === "H") {
+      image.flop();
+    } else if (flipDirection === "V") {
+      image.flip();
+    } else {
+      c.status(400);
+      return c.json({
+        message: "validation error",
+        error: "flipDirection must be either H or V",
+      });
+    }
+
+    await image.toFile(`uploads/image/flipped-${file.name}`);
+
+    return c.json({
+      message: "success",
+      image: {
+        name: file.name,
+        size: file.size,
+        url: `${process.env.HOST}/uploads/image/flipped-${file.name}`,
+      },
+    });
+  } catch (error) {
+    c.status(500);
+    return c.json({
+      message: "internal server error",
+      error: "error processing image",
+    });
+  }
+};
+
+export default { resize, rotate, flip };
