@@ -55,7 +55,7 @@ const compress = async (c: Context) => {
 
     return c.json({
       message: "success",
-      audio: {
+      video: {
         name: file.name,
         size: file.size,
         url: `${process.env.HOST}/api/video/compressed-${file.name}`,
