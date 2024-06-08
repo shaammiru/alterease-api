@@ -17,7 +17,7 @@ app.post("/api/image/resize", imageHandler.resize);
 app.post("/api/image/rotate", imageHandler.rotate);
 app.post("/api/image/flip", imageHandler.flip);
 
-app.use(timeout(10000));
+app.use(timeout(800000));
 
 app.post("/api/audio/compress", audioHandler.compress);
 app.post("/api/video/compress", videoHandler.compress);
