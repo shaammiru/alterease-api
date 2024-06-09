@@ -1,6 +1,7 @@
 import { unlink } from "node:fs/promises";
 import { Context } from "hono";
 import ffmpeg from "fluent-ffmpeg";
+import BlobStorage from "../service/blobStorage";
 
 const compress = async (c: Context) => {
   const body = await c.req.parseBody();
@@ -51,6 +52,16 @@ const compress = async (c: Context) => {
         .run();
     });
 
+    const compressedFile = Bun.file(`api/audio/compressed-${file.name}`);
+    const compressedFileBuffer = Buffer.from(
+      await compressedFile.arrayBuffer()
+    );
+    const fileUrl = await BlobStorage.uploadFile(
+      compressedFileBuffer,
+      file.name,
+      "audio"
+    );
+
     await unlink(`api/audio/${file.name}`);
 
     return c.json({
@@ -58,10 +69,11 @@ const compress = async (c: Context) => {
       audio: {
         name: file.name,
         size: file.size,
-        url: `${process.env.HOST}/api/audio/compressed-${file.name}`,
+        url: fileUrl,
       },
     });
   } catch (error) {
+    console.log(error);
     c.status(500);
     return c.json({
       message: "internal server error",

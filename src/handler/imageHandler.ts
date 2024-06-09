@@ -1,5 +1,6 @@
 import { Context } from "hono";
 import sharp from "sharp";
+import BlobStorage from "../service/blobStorage";
 
 const resize = async (c: Context) => {
   const body = await c.req.parseBody();
@@ -42,17 +43,23 @@ const resize = async (c: Context) => {
   try {
     const buffer = await file.arrayBuffer();
     const image = sharp(new Uint8Array(buffer));
-    await image.resize(width, height).toFile(`api/image/resized-${file.name}`);
+    const processedImage = await image.resize(width, height).toBuffer();
+    const fileUrl = await BlobStorage.uploadFile(
+      processedImage,
+      file.name,
+      "image"
+    );
 
     return c.json({
       message: "success",
       image: {
         name: file.name,
         size: file.size,
-        url: `${process.env.HOST}/api/image/resized-${file.name}`,
+        url: fileUrl,
       },
     });
   } catch (error) {
+    console.log(error);
     c.status(500);
     return c.json({
       message: "internal server error",
@@ -85,18 +92,23 @@ const rotate = async (c: Context) => {
   try {
     const buffer = await file.arrayBuffer();
     const image = sharp(new Uint8Array(buffer));
-
-    await image.rotate(rotateDegree).toFile(`api/image/rotated-${file.name}`);
+    const processedImage = await image.rotate(rotateDegree).toBuffer();
+    const fileUrl = await BlobStorage.uploadFile(
+      processedImage,
+      file.name,
+      "image"
+    );
 
     return c.json({
       message: "success",
       image: {
         name: file.name,
         size: file.size,
-        url: `${process.env.HOST}/api/image/rotated-${file.name}`,
+        url: fileUrl,
       },
     });
   } catch (error) {
+    console.log(error);
     c.status(500);
     return c.json({
       message: "internal server error",
@@ -134,17 +146,23 @@ const flip = async (c: Context) => {
       });
     }
 
-    await image.toFile(`api/image/flipped-${file.name}`);
+    const processedImage = await image.toBuffer();
+    const fileUrl = await BlobStorage.uploadFile(
+      processedImage,
+      file.name,
+      "image"
+    );
 
     return c.json({
       message: "success",
       image: {
         name: file.name,
         size: file.size,
-        url: `${process.env.HOST}/api/image/flipped-${file.name}`,
+        url: fileUrl,
       },
     });
   } catch (error) {
+    console.log(error);
     c.status(500);
     return c.json({
       message: "internal server error",
